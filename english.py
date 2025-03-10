@@ -1,14 +1,20 @@
-from flask import Flask, request, jsonify
-from google import generativeai as genai
-from dotenv import load_dotenv
-from flask_cors import CORS
 import os
+from dotenv import load_dotenv
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+import google.generativeai as genai
 
 # Load environment variables
 load_dotenv()
-API_KEY = os.getenv("GEMINI_API_KEY")
 
+# Get API key with fallback
+API_KEY = os.environ.get('GEMINI_API_KEY')
+if not API_KEY:
+    raise ValueError("GEMINI_API_KEY not found in environment variables")
+
+# Configure Gemini
 genai.configure(api_key=API_KEY)
+
 app = Flask(__name__)
 CORS(app, resources={
     r"/chat": {
@@ -158,4 +164,5 @@ Question: """ + user_input
         }), 500
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
