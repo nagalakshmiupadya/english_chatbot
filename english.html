@@ -354,19 +354,31 @@
             
             fetch("http://127.0.0.1:5000/chat", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { 
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                },
                 body: JSON.stringify({ message: option }),
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 loadingIndicator.remove();
-                appendMessage('bot', data.response);
-                showOptions(mainOptions);
+                if (data && data.response) {
+                    appendMessage('bot', data.response);
+                    showOptions(mainOptions);
+                } else {
+                    throw new Error('Invalid response format');
+                }
             })
             .catch(error => {
+                console.error("Error details:", error);
                 loadingIndicator.remove();
-                console.error("Error:", error);
-                appendMessage('bot', 'Sorry, an error occurred', true);
+                appendMessage('bot', '• Connection error\n• Please check your internet and try again', true);
                 showOptions(mainOptions);
             });
         }
