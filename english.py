@@ -10,7 +10,13 @@ API_KEY = os.getenv("GEMINI_API_KEY")
 
 genai.configure(api_key=API_KEY)
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={
+    r"/chat": {
+        "origins": ["*"],
+        "methods": ["POST"],
+        "allow_headers": ["Content-Type"]
+    }
+})
 
 # Predefined responses with options and sub-options
 PREDEFINED_RESPONSES = {
@@ -63,13 +69,28 @@ PREDEFINED_RESPONSES = {
 • Email: nithin.vs@ka-naada.com""",
         "sub_options": []
     }
+    
 }
 
+# Improve error handling in chat route
 @app.route("/chat", methods=["POST"])
 def chat():
     try:
         data = request.json
+        if not data:
+            return jsonify({
+                "response": "• Invalid request format",
+                "sub_options": [],
+                "show_main_options": True
+            }), 400
+
         user_input = data.get("message", "").strip()
+        if not user_input:
+            return jsonify({
+                "response": "• Please enter a message",
+                "sub_options": [],
+                "show_main_options": True
+            }), 400
         
         # Check predefined responses first
         if user_input in PREDEFINED_RESPONSES:
@@ -79,13 +100,25 @@ def chat():
             return jsonify(response_data)
 
         # Use Gemini model for non-predefined responses
-        model = genai.GenerativeModel('gemini-2.0-flash-lite')
-        
+        model = genai.GenerativeModel('gemini-2.0-flash-lite', 
+            generation_config={
+                'temperature': 0.7,
+                'top_p': 0.8,
+                'top_k': 40
+            },
+            safety_settings=[
+                {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
+            ])
+
+        # Update the context to force English responses
         context = """You are a Saree Mahal store assistant.
-        Provide only 3-4 bullet points.
-        Use '•' for bullet points.
-        Add line breaks between points.
-        Question: """ + user_input
+IMPORTANT: Always respond in English only.
+Provide exactly 3-4 bullet points.
+Use '•' for bullet points.
+Keep responses short and focused on sarees and store information.
+Add line breaks between points.
+
+Question: """ + user_input
 
         response = model.generate_content(context)
         
@@ -115,12 +148,14 @@ def chat():
         })
 
     except Exception as e:
-        print(f"Error: {str(e)}")
+        print(f"Error details: {str(e)}")  # Add detailed error logging
         return jsonify({
-            "response": "• Sorry, an error occurred\n\n• Please try again",
+            "response": """• Sorry, an error occurred
+• Please check your internet connection
+• Try refreshing the page""",
             "sub_options": [],
             "show_main_options": True
-        })
+        }), 500
 
 if __name__ == "__main__":
     app.run(debug=True)
