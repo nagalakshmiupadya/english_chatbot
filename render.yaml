@@ -1,9 +1,0 @@
-services:
-  - type: web
-    name: saree-mahal-chatbot
-    env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn english:app
-    envVars:
-      - key: GEMINI_API_KEY
-        sync: false
