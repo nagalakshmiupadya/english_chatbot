@@ -15,3 +15,6 @@ An AI-powered chatbot that answers questions about sarees.
 - **AI Model:** Google Gemini API
 - **Deployment:** Render
 - **Frontend:** HTML, CSS, JavaScript
+
+  
+
