@@ -16,6 +16,9 @@ if not API_KEY:
 genai.configure(api_key=API_KEY)
 
 app = Flask(__name__)
+@app.route('/')
+def home():
+    return render_template('english.html')  
 CORS(app, resources={
     r"/chat": {
         "origins": ["*"],
@@ -166,3 +169,4 @@ Question: """ + user_input
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
+
